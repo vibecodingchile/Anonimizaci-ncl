@@ -1,29 +1,19 @@
-FROM python:3.8-slim
+FROM python:3.6.15-slim-bullseye
 
-RUN mkdir /home/anonym /home/anonym/data /home/anonym/sensitive_identification
+RUN mkdir /home/anonym
+
+ADD anon_pipe.zip /home/anonym
 
 WORKDIR /home/anonym
 
-RUN apt-get update 
+RUN apt-get update
 
-COPY min_req.txt /home/anonym/
+RUN apt-get -y install unzip
 
-RUN python -m pip install --upgrade pip
-RUN python -m pip install -r min_req.txt
-RUN pip install https://huggingface.co/PlanTL-GOB-ES/es_anonimization_core_lg/resolve/main/es_anonimization_core_lg-any-py3-none-any.whl
-RUN pip install https://huggingface.co/spacy/xx_ent_wiki_sm/resolve/main/xx_ent_wiki_sm-any-py3-none-any.whl
-RUN python -m nltk.downloader punkt
+RUN unzip anon_pipe.zip
 
+RUN pip install -r requirements.txt
 
-COPY pipeline.py anonymize.py meta.py ingestors.py /home/anonym/
+RUN python -m spacy download es_core_news_sm
 
-COPY models /home/anonym/models
-
-COPY truecaser /home/anonym/truecaser
-
-COPY sensitive_identification /home/anonym/sensitive_identification/
-
-COPY data /home/anonym/data
-
-ENTRYPOINT ["python3", "pipeline.py"]
-
+RUN python -c 'from transformers import AutoTokenizer, AutoModel;tokenizer = AutoTokenizer.from_pretrained("BSC-TeMU/roberta-base-bne-capitel-ner-plus");model = AutoModel.from_pretrained("BSC-TeMU/roberta-base-bne-capitel-ner-plus")'
